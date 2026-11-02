@@ -4,29 +4,20 @@ export type NavAnyOfItem = {
   anyOf?: string[];
 };
 
-export type FilterableNavLink = NavAnyOfItem & {
-  type: "link";
-};
-
-export type FilterableNavSection<TChild extends NavAnyOfItem> = {
-  type: "section";
-  children: TChild[];
-};
+type Linkish = NavAnyOfItem & { type: "link" };
+type Sectionish = { type: "section"; children: NavAnyOfItem[] };
 
 /** Hide links/sections whose `anyOf` the session does not hold. */
-export function filterNavByAnyOf<TLink extends FilterableNavLink, TChild extends NavAnyOfItem, TSection extends FilterableNavSection<TChild>>(
-  entries: Array<TLink | TSection>,
-  session: AuthSession | null,
-): Array<TLink | TSection> {
+export function filterNavByAnyOf<T extends Linkish | Sectionish>(entries: T[], session: AuthSession | null): T[] {
   return entries
     .map((entry) => {
       if (entry.type === "link") {
         return !entry.anyOf || hasAnyPermission(session, entry.anyOf) ? entry : null;
       }
       const children = entry.children.filter((child) => !child.anyOf || hasAnyPermission(session, child.anyOf));
-      return children.length ? ({ ...entry, children } as TSection) : null;
+      return children.length ? ({ ...entry, children } as T) : null;
     })
-    .filter((entry): entry is TLink | TSection => entry != null);
+    .filter((entry): entry is T => entry != null);
 }
 
 /** Longest matching internal path wins. External `href` links are ignored. */
