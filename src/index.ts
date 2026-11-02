@@ -29,3 +29,6 @@ export { PageHeader, EmptyState, LoadingState, ForbiddenScreen, NoEntitlementScr
 export { PaginationBar, pageCount } from "./pagination-bar";
 export { DataDirectory } from "./data-directory";
 export type { DirectoryColumn } from "./data-directory";
+export { filterNavByAnyOf, matchNavAnyOf } from "./nav-filter";
+export type { FilterableNavLink, FilterableNavSection, NavAnyOfItem } from "./nav-filter";
+

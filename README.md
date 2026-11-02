@@ -13,6 +13,8 @@ Import. Do not copy.
 - i18n bootstrap (`ar` default, `dir` from language)
 - `Intl` money/date helpers
 - Forbidden / empty / no-entitlement screens
+- `filterNavByAnyOf` / `matchNavAnyOf`
+- SPA nginx + Dockerfile under `docker/` (import; do not fork)
 
 Locales, nav, and product API tags stay in each app.
 
