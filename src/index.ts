@@ -26,6 +26,8 @@ export { ProductSessionProvider, useProductSession } from "./session-context";
 export { PermissionGate } from "./permission-gate";
 export { ModuleGate } from "./module-gate";
 export { PageHeader, EmptyState, LoadingState, ForbiddenScreen, NoEntitlementScreen } from "./screens";
+export { AccountPage } from "./account-page";
+export { MIN_NEW_PASSWORD_LENGTH, newPasswordIssue, submitChangePassword } from "./account";
 export { PaginationBar, pageCount } from "./pagination-bar";
 export { DataDirectory } from "./data-directory";
 export type { DirectoryColumn } from "./data-directory";
