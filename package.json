@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Shared session, fetch, gates, directory, i18n, and format helpers for كَادر / دَفتر / رِحال / مِنبر",
+  "description": "Shared session, fetch, gates, directory, i18n, launcher, and format helpers for كَادر / دَفتر / رِحال / مِنبر",
   "exports": {
     ".": "./src/index.ts"
   },

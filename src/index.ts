@@ -27,6 +27,17 @@ export { PermissionGate } from "./permission-gate";
 export { ModuleGate } from "./module-gate";
 export { PageHeader, EmptyState, LoadingState, ForbiddenScreen, NoEntitlementScreen } from "./screens";
 export { AccountPage } from "./account-page";
+export {
+  HANDOFF_HASH_KEY,
+  SELLABLE_PRODUCTS,
+  completeTenantLogin,
+  consumeTenantHandoff,
+  launchKind,
+  launchTargets,
+  withHandoff,
+} from "./launcher";
+export type { LaunchTarget, SellableModule } from "./launcher";
+export { LauncherPage } from "./launcher-page";
 export { MIN_NEW_PASSWORD_LENGTH, newPasswordIssue, submitChangePassword } from "./account";
 export { PaginationBar, pageCount } from "./pagination-bar";
 export { DataDirectory } from "./data-directory";
