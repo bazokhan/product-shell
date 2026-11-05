@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configureProductShell, resetProductShellConfig } from "./config";
 import {
   ApiRequestError,
+  api,
   configureApiClient,
   customFetch,
   resetApiClient,
@@ -79,6 +80,34 @@ describe("customFetch", () => {
     await expect(customFetch("/auth/login")).rejects.toBeInstanceOf(ApiRequestError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(logout).not.toHaveBeenCalled();
+  });
+
+  it("posts a relative same-origin login without throwing Invalid URL", async () => {
+    resetProductShellConfig();
+    configureProductShell({ storageKey: "minbar.auth", getBaseUrl: () => "/api/v1" });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ accessToken: "t", refreshToken: "r", permissions: [] }), {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const payload = await api.post<{ accessToken: string }>("/auth/platform/login", {
+      email: "op@example.com",
+      password: "x",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/v1/auth/platform/login");
+    expect(payload.accessToken).toBe("t");
+  });
+
+  it("does not double-prefix query GETs on an absolute API base", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ data: [] }), { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await api.get("/platform/tenants", { page: 1 });
+    expect(fetchMock.mock.calls[0][0]).toBe("https://api.example/api/v1/platform/tenants?page=1");
   });
 
   it("logs out when refresh fails", async () => {

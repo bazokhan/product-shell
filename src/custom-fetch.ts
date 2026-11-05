@@ -126,17 +126,25 @@ export async function postForm<T>(path: string, form: FormData): Promise<T> {
   return (await readBody(response)) as T;
 }
 
+function appendQuery(
+  path: string,
+  query?: Record<string, string | number | boolean | undefined | null>,
+): string {
+  if (!query) return path;
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== null && value !== "") {
+      params.set(key, String(value));
+    }
+  }
+  const qs = params.toString();
+  if (!qs) return path;
+  return `${path}${path.includes("?") ? "&" : "?"}${qs}`;
+}
+
 export const api = {
   get: async <T>(path: string, query?: Record<string, string | number | boolean | undefined | null>) => {
-    const url = new URL(buildFullUrl(path));
-    if (query) {
-      for (const [key, value] of Object.entries(query)) {
-        if (value !== undefined && value !== null && value !== "") {
-          url.searchParams.set(key, String(value));
-        }
-      }
-    }
-    const response = await authenticatedFetch(url.pathname + url.search, { method: "GET" });
+    const response = await authenticatedFetch(appendQuery(path, query), { method: "GET" });
     return readBody(response) as Promise<T>;
   },
   post: async <T>(
@@ -144,15 +152,7 @@ export const api = {
     body?: unknown,
     query?: Record<string, string | number | boolean | undefined | null>,
   ) => {
-    const url = new URL(buildFullUrl(path));
-    if (query) {
-      for (const [key, value] of Object.entries(query)) {
-        if (value !== undefined && value !== null && value !== "") {
-          url.searchParams.set(key, String(value));
-        }
-      }
-    }
-    const response = await authenticatedFetch(url.pathname + url.search, {
+    const response = await authenticatedFetch(appendQuery(path, query), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
