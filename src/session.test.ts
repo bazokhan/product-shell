@@ -75,4 +75,12 @@ describe("session", () => {
     expect(isModuleEnabled(session({ enabledModules: ["ACCOUNTING"] }), "HR")).toBe(false);
     expect(isModuleEnabled(null, "HR")).toBe(false);
   });
+
+  it("allows a platform session with no tenant", () => {
+    const s = session({ tenant: undefined, permissions: ["platform.console.read"] });
+    expect(hasPermission(s, "platform.console.read")).toBe(true);
+    expect(hasPermission(s, "platform.tenants.manage")).toBe(false);
+    saveSession(s);
+    expect(loadSession()?.tenant).toBeUndefined();
+  });
 });

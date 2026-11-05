@@ -6,7 +6,8 @@ export type AuthSession = {
   refreshToken: string;
   tokenType: string;
   user: AuthUser;
-  tenant: AuthTenant;
+  /** Absent for مِنبر platform operators (no tenant). */
+  tenant?: AuthTenant | null;
   permissions: string[];
   branchIds: string[];
   enabledModules?: string[];
