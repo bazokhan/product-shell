@@ -3,6 +3,7 @@ import { configureProductShell, resetProductShellConfig } from "./config";
 import { configureApiClient, resetApiClient } from "./custom-fetch";
 import {
   completeTenantLogin,
+  completeTenantLoginWithMfa,
   consumeTenantHandoff,
   HANDOFF_HASH_KEY,
   launchKind,
@@ -135,5 +136,48 @@ describe("launcher", () => {
     expect(String(fetchMock.mock.calls[1][0])).toBe("https://api.example/api/v1/auth/me");
     expect(next.enabledModules).toEqual(["HR", "ACCOUNTING"]);
     expect(launchKind(launchTargets(next.enabledModules))).toBe("many");
+  });
+
+  it("does not GET /auth/me when login returns MFA_REQUIRED", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          error: { code: "MFA_REQUIRED", message: "Two-factor code required", details: { mfaToken: "chal" } },
+        }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(completeTenantLogin({ tenantSlug: "acme", email: "a@b.c", password: "ok" })).rejects.toMatchObject({
+      name: "MfaRequiredError",
+      mfaToken: "chal",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockReset();
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            accessToken: "tok",
+            refreshToken: "ref",
+            user: { id: "u", email: "a@b.c", name: "A" },
+            tenant: { id: "t", slug: "acme", name: "Acme" },
+            permissions: ["hr.employees.read"],
+            branchIds: [],
+          }),
+          { status: 201, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ enabledModules: ["HR"] }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    await completeTenantLoginWithMfa({ mfaToken: "chal", code: "123456" });
+    expect(String(fetchMock.mock.calls[0][0])).toBe("https://api.example/api/v1/auth/login/mfa");
+    expect(String(fetchMock.mock.calls[1][0])).toBe("https://api.example/api/v1/auth/me");
   });
 });

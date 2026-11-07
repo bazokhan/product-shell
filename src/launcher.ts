@@ -1,5 +1,6 @@
 import { productShellConfig, type AuthSession, type AuthTenant, type AuthUser } from "./config";
 import { api } from "./custom-fetch";
+import { completeTenantMfaLogin, throwIfMfaRequired } from "./mfa";
 import { saveSession } from "./session";
 
 export const HANDOFF_HASH_KEY = "tg_handoff";
@@ -140,7 +141,24 @@ export async function completeTenantLogin(input: {
   email: string;
   password: string;
 }): Promise<AuthSession> {
-  const login = await api.post<LoginResponse>("/auth/login", input);
+  try {
+    const login = await api.post<LoginResponse>("/auth/login", input);
+    return finishTenantSession(login);
+  } catch (err) {
+    throwIfMfaRequired(err);
+  }
+}
+
+export async function completeTenantLoginWithMfa(input: { mfaToken: string; code: string }): Promise<AuthSession> {
+  try {
+    const login = await completeTenantMfaLogin(input) as LoginResponse;
+    return finishTenantSession(login);
+  } catch (err) {
+    throwIfMfaRequired(err);
+  }
+}
+
+async function finishTenantSession(login: LoginResponse): Promise<AuthSession> {
   saveSession(toSession(login));
   const me = await api.get<MeResponse>("/auth/me");
   const session = toSession(login, me);

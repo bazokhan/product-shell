@@ -33,7 +33,7 @@ let onUnauthorized: LogoutHandler = () => undefined;
 let refreshInFlight: Promise<string | null> | null = null;
 let refreshBlockedUntil = 0;
 
-const SKIP_REFRESH_RETRY = /\/auth\/(refresh|login|platform\/login|client-credentials)(?:\?|$)/;
+const SKIP_REFRESH_RETRY = /\/auth\/(refresh|login|login\/mfa|platform\/login|client-credentials)(?:\?|$)/;
 
 export function configureApiClient(options: {
   getAccessToken: TokenProvider;

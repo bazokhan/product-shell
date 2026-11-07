@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 import { ApiRequestError } from "./custom-fetch";
 import {
   completeTenantLogin,
+  completeTenantLoginWithMfa,
   launchKind,
   launchTargets,
   withHandoff,
-  type LaunchTarget,
 } from "./launcher";
+import { MfaRequiredError } from "./mfa";
 import { clearSession, loadSession } from "./session";
 
 const fieldClass = "flex h-9 w-full rounded-md border px-3 text-sm";
@@ -26,6 +27,8 @@ export function LauncherPage({
   const [tenantSlug, setTenantSlug] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [totp, setTotp] = useState("");
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [sessionTick, setSessionTick] = useState(0);
@@ -46,7 +49,9 @@ export function LauncherPage({
     setError(null);
     setPending(true);
     try {
-      const next = await completeTenantLogin({ tenantSlug, email, password });
+      const next = mfaToken
+        ? await completeTenantLoginWithMfa({ mfaToken, code: totp })
+        : await completeTenantLogin({ tenantSlug, email, password });
       const nextTargets = launchTargets(next.enabledModules);
       if (launchKind(nextTargets) === "one") {
         openUrl(withHandoff(nextTargets[0]!.origin, next));
@@ -54,6 +59,11 @@ export function LauncherPage({
       }
       setSessionTick((value) => value + 1);
     } catch (err) {
+      if (err instanceof MfaRequiredError) {
+        setMfaToken(err.mfaToken);
+        setError(null);
+        return;
+      }
       setError(err instanceof ApiRequestError ? err.message : t("launcher.failed"));
     } finally {
       setPending(false);
@@ -144,6 +154,20 @@ export function LauncherPage({
           />
         </label>
         {kind === "none" && session ? <p className="text-sm text-slate-500">{t("launcher.none")}</p> : null}
+        {mfaToken ? (
+          <label className="block space-y-1 text-sm">
+            <span>{t("launcher.totp")}</span>
+            <input
+              className={fieldClass}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={totp}
+              onChange={(event) => setTotp(event.target.value)}
+              required
+            />
+            <span className="text-slate-500">{t("launcher.totpHint")}</span>
+          </label>
+        ) : null}
         {error ? <p className="text-sm text-red-700">{error}</p> : null}
         <button type="submit" disabled={pending} className={btnClass}>
           {t("launcher.submit")}

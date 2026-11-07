@@ -31,6 +31,7 @@ export {
   HANDOFF_HASH_KEY,
   SELLABLE_PRODUCTS,
   completeTenantLogin,
+  completeTenantLoginWithMfa,
   consumeTenantHandoff,
   launchKind,
   launchTargets,
@@ -39,6 +40,17 @@ export {
 export type { LaunchTarget, SellableModule } from "./launcher";
 export { LauncherPage } from "./launcher-page";
 export { MIN_NEW_PASSWORD_LENGTH, newPasswordIssue, submitChangePassword } from "./account";
+export {
+  MfaRequiredError,
+  completePlatformMfaLogin,
+  completeTenantMfaLogin,
+  disableMfa,
+  enableMfa,
+  fetchMfaStatus,
+  mfaTokenFromError,
+  setupMfa,
+  throwIfMfaRequired,
+} from "./mfa";
 export { PaginationBar, pageCount } from "./pagination-bar";
 export { DataDirectory } from "./data-directory";
 export type { DirectoryColumn } from "./data-directory";
