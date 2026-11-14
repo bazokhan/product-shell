@@ -1,4 +1,4 @@
-# @trugraph/product-shell
+# @maqsid/product-shell
 
 One shared UI/auth package for كَادر, دَفتر, رِحال, and مِنبر.
 
@@ -21,17 +21,17 @@ Locales, nav, and product API tags stay in each app.
 ## Use
 
 ```ts
-import { configureProductShell, bootstrapI18n, customFetch } from "@trugraph/product-shell";
+import { configureProductShell, bootstrapI18n, customFetch } from "@maqsid/product-shell";
 ```
 
 Path dependency from a sibling checkout:
 
 ```json
-"@trugraph/product-shell": "file:../product-shell"
+"@maqsid/product-shell": "file:../product-shell"
 ```
 
 GitHub (CI / Docker):
 
 ```json
-"@trugraph/product-shell": "github:bazokhan/product-shell#master"
+"@maqsid/product-shell": "github:bazokhan/product-shell#master"
 ```

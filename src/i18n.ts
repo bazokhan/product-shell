@@ -11,8 +11,9 @@ const shellAr = {
     next: "التالي",
   },
   launcher: {
-    title: "ترو جراف",
+    title: "مقصد",
     subtitle: "دخول واحد. ثم المنتج الذي اشتراه المستأجر.",
+    productsHint: "مقصد هو اللوحة الكاملة. كَادر ودَفتر ورِحال منتجات مستقلة. افتح أياً منها مباشرة، أو ادخل مرة واحدة.",
     tenantSlug: "المستأجر",
     email: "البريد",
     password: "كلمة المرور",
@@ -61,8 +62,9 @@ const shellEn = {
     next: "Next",
   },
   launcher: {
-    title: "TruGraph",
+    title: "Maqsid",
     subtitle: "One sign-in. Then the products this tenant bought.",
+    productsHint: "Maqsid is the whole dashboard. Kader, Daftar, and Rihal are separate products. Open any of them directly, or sign in once.",
     tenantSlug: "Tenant",
     email: "Email",
     password: "Password",

@@ -7,7 +7,7 @@ COPY package.json package-lock.json ./
 COPY vendor/product-shell ./vendor/product-shell
 RUN npm ci
 COPY . .
-ARG VITE_API_BASE_URL=https://fleet-api.trugraph.io/api/v1
+ARG VITE_API_BASE_URL=https://api.maqsid.net/api/v1
 ARG SOURCE_COMMIT=development
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV SOURCE_COMMIT=$SOURCE_COMMIT

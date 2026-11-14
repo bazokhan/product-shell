@@ -2,18 +2,48 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiRequestError } from "./custom-fetch";
 import {
+  catalogTargets,
   completeTenantLogin,
   completeTenantLoginWithMfa,
   launchKind,
   launchTargets,
   withHandoff,
+  type LaunchTarget,
 } from "./launcher";
 import { MfaRequiredError } from "./mfa";
 import { clearSession, loadSession } from "./session";
 
-const fieldClass = "flex h-9 w-full rounded-md border px-3 text-sm";
+const fieldClass = "flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900";
 const btnClass =
   "inline-flex h-9 w-full items-center justify-center rounded-md bg-slate-900 px-4 text-sm text-white disabled:opacity-50";
+
+function ProductCards({
+  targets,
+  arabic,
+  hrefFor,
+}: {
+  targets: readonly LaunchTarget[];
+  arabic: boolean;
+  hrefFor: (target: LaunchTarget) => string;
+}) {
+  return (
+    <ul className="grid gap-3">
+      {targets.map((target) => (
+        <li key={target.module}>
+          <a
+            href={hrefFor(target)}
+            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-slate-900 hover:bg-slate-50"
+          >
+            <span className="grid size-12 place-items-center rounded-2xl bg-slate-900 text-xl font-bold text-white">
+              {target.mark}
+            </span>
+            <span className="text-lg font-semibold">{arabic ? target.nameAr : target.nameEn}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function LauncherPage({
   openUrl = (href) => {
@@ -40,8 +70,9 @@ export function LauncherPage({
   useEffect(() => {
     if (!session) return;
     const next = launchTargets(session.enabledModules);
-    if (launchKind(next) !== "one" || !next[0]) return;
-    openUrl(withHandoff(next[0].origin, session));
+    const only = next[0];
+    if (launchKind(next) !== "one" || !only) return;
+    openUrl(only.handoff ? withHandoff(only.origin, session) : only.origin);
   }, [openUrl, session]);
 
   async function onSubmit(event: FormEvent) {
@@ -53,8 +84,9 @@ export function LauncherPage({
         ? await completeTenantLoginWithMfa({ mfaToken, code: totp })
         : await completeTenantLogin({ tenantSlug, email, password });
       const nextTargets = launchTargets(next.enabledModules);
-      if (launchKind(nextTargets) === "one") {
-        openUrl(withHandoff(nextTargets[0]!.origin, next));
+      const only = nextTargets[0];
+      if (launchKind(nextTargets) === "one" && only) {
+        openUrl(only.handoff ? withHandoff(only.origin, next) : only.origin);
         return;
       }
       setSessionTick((value) => value + 1);
@@ -84,21 +116,11 @@ export function LauncherPage({
             <h1 className="text-2xl font-bold">{t("launcher.choose")}</h1>
             <p className="text-sm text-slate-500">{t("launcher.subtitle")}</p>
           </div>
-          <ul className="grid gap-3">
-            {targets.map((target) => (
-              <li key={target.module}>
-                <a
-                  href={withHandoff(target.origin, session)}
-                  className="flex items-center gap-3 rounded-xl border p-4 hover:bg-slate-50"
-                >
-                  <span className="grid size-12 place-items-center rounded-2xl bg-slate-900 text-xl font-bold text-white">
-                    {target.mark}
-                  </span>
-                  <span className="text-lg font-semibold">{arabic ? target.nameAr : target.nameEn}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <ProductCards
+            targets={targets}
+            arabic={arabic}
+            hrefFor={(target) => (target.handoff ? withHandoff(target.origin, session) : target.origin)}
+          />
           <button
             type="button"
             className="text-sm text-slate-500 underline"
@@ -114,11 +136,21 @@ export function LauncherPage({
     );
   }
 
+  const catalog = catalogTargets();
+
   return (
-    <div className="min-h-dvh grid place-items-center p-6">
-      <form onSubmit={(event) => void onSubmit(event)} className="w-full max-w-sm space-y-4 rounded-xl border bg-white p-6">
+    <div className="min-h-dvh bg-slate-50 p-6 text-slate-900">
+      <div className="mx-auto grid w-full max-w-5xl items-start gap-8 lg:grid-cols-2">
+        <section className="space-y-4">
+          <div>
+            <h1 className="text-3xl font-bold">{t("launcher.title")}</h1>
+            <p className="mt-2 text-sm text-slate-600">{t("launcher.productsHint")}</p>
+          </div>
+          <ProductCards targets={catalog} arabic={arabic} hrefFor={(target) => target.origin} />
+        </section>
+        <form onSubmit={(event) => void onSubmit(event)} className="w-full space-y-4 rounded-xl border border-slate-200 bg-white p-6 text-slate-900">
         <div>
-          <h1 className="text-2xl font-bold">{t("launcher.title")}</h1>
+          <h2 className="text-2xl font-bold">{t("launcher.submit")}</h2>
           <p className="text-sm text-slate-500">{t("launcher.subtitle")}</p>
         </div>
         <label className="block space-y-1 text-sm">
@@ -172,7 +204,8 @@ export function LauncherPage({
         <button type="submit" disabled={pending} className={btnClass}>
           {t("launcher.submit")}
         </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

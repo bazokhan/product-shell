@@ -11,32 +11,45 @@ export const SELLABLE_PRODUCTS = [
     mark: "ح",
     nameAr: "كَادر",
     nameEn: "Kader",
-    defaultOrigin: "https://hr.trugraph.io",
+    defaultOrigin: "https://kader.maqsid.net",
   },
   {
     module: "ACCOUNTING",
     mark: "د",
     nameAr: "دَفتر",
     nameEn: "Daftar",
-    defaultOrigin: "https://accounting.trugraph.io",
+    defaultOrigin: "https://daftar.maqsid.net",
   },
   {
     module: "OPERATIONS",
     mark: "ر",
     nameAr: "رِحال",
     nameEn: "Rihal",
-    defaultOrigin: "https://rihal.trugraph.io",
+    defaultOrigin: "https://rihal.maqsid.net",
   },
 ] as const;
 
 export type SellableModule = (typeof SELLABLE_PRODUCTS)[number]["module"];
 
+/** The comprehensive dashboard. Not an entitlement; it reads the same modules. */
+export const PORTAL_MODULE = "PORTAL" as const;
+
+const PORTAL = {
+  module: PORTAL_MODULE,
+  mark: "م",
+  nameAr: "مقصد",
+  nameEn: "Maqsid",
+  defaultOrigin: "https://app.maqsid.net",
+} as const;
+
 export type LaunchTarget = {
-  module: SellableModule;
+  module: SellableModule | typeof PORTAL_MODULE;
   mark: string;
   nameAr: string;
   nameEn: string;
   origin: string;
+  /** Individual products accept the sign-in handoff. The dashboard does not. */
+  handoff: boolean;
 };
 
 type LoginResponse = {
@@ -58,21 +71,43 @@ type MeResponse = {
   industryPack?: string;
 };
 
-function originFor(module: SellableModule): string {
+function originFor(module: SellableModule | typeof PORTAL_MODULE): string {
   const override = productShellConfig().productOrigins?.[module];
-  const raw = override ?? SELLABLE_PRODUCTS.find((row) => row.module === module)!.defaultOrigin;
-  return raw.replace(/\/$/, "");
+  const fallback = module === PORTAL_MODULE
+    ? PORTAL.defaultOrigin
+    : SELLABLE_PRODUCTS.find((row) => row.module === module)!.defaultOrigin;
+  return (override ?? fallback).replace(/\/$/, "");
 }
 
-export function launchTargets(enabledModules: readonly string[] | undefined | null): LaunchTarget[] {
-  const enabled = new Set(enabledModules ?? []);
-  return SELLABLE_PRODUCTS.filter((row) => enabled.has(row.module)).map((row) => ({
+function portalTarget(): LaunchTarget {
+  return {
+    module: PORTAL.module,
+    mark: PORTAL.mark,
+    nameAr: PORTAL.nameAr,
+    nameEn: PORTAL.nameEn,
+    origin: originFor(PORTAL_MODULE),
+    handoff: false,
+  };
+}
+
+function toTarget(row: (typeof SELLABLE_PRODUCTS)[number]): LaunchTarget {
+  return {
     module: row.module,
     mark: row.mark,
     nameAr: row.nameAr,
     nameEn: row.nameEn,
     origin: originFor(row.module),
-  }));
+    handoff: true,
+  };
+}
+
+export function catalogTargets(): LaunchTarget[] {
+  return [portalTarget(), ...SELLABLE_PRODUCTS.map(toTarget)];
+}
+
+export function launchTargets(enabledModules: readonly string[] | undefined | null): LaunchTarget[] {
+  const enabled = new Set(enabledModules ?? []);
+  return [portalTarget(), ...SELLABLE_PRODUCTS.filter((row) => enabled.has(row.module)).map(toTarget)];
 }
 
 export function launchKind(targets: readonly LaunchTarget[]): "none" | "one" | "many" {

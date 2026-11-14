@@ -20,7 +20,7 @@ export type ProductShellConfig = {
   expandPermissions?: (permissions: readonly string[]) => string[];
   tenantAdminPermission?: string;
   /** Per-module product origins for the shared launcher. */
-  productOrigins?: Partial<Record<"HR" | "ACCOUNTING" | "OPERATIONS", string>>;
+  productOrigins?: Partial<Record<"PORTAL" | "HR" | "ACCOUNTING" | "OPERATIONS", string>>;
 };
 
 const DEFAULTS: ProductShellConfig = {

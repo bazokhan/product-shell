@@ -68,7 +68,7 @@ describe("matchNavAnyOf", () => {
   const links = [
     { to: "/", exact: true, anyOf: ["accounting.read"] },
     { to: "/accounting/journals", anyOf: ["accounting.journals.manage"] },
-    { to: "/payroll", href: "https://hr.trugraph.io/payroll", anyOf: ["accounting.read"] },
+    { to: "/payroll", href: "https://kader.maqsid.net/payroll", anyOf: ["accounting.read"] },
   ];
 
   it("matches the longest internal path", () => {

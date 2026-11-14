@@ -6,6 +6,7 @@ import {
   completeTenantLoginWithMfa,
   consumeTenantHandoff,
   HANDOFF_HASH_KEY,
+  catalogTargets,
   launchKind,
   launchTargets,
   withHandoff,
@@ -47,28 +48,44 @@ describe("launcher", () => {
     localStorage.clear();
   });
 
-  it("builds cards for sellable modules and ignores طواف and unknown names", () => {
+  it("lists the whole dashboard and every separate product", () => {
+    const targets = catalogTargets();
+    expect(targets.map((row) => row.origin)).toEqual([
+      "https://app.maqsid.net",
+      "https://kader.maqsid.net",
+      "https://daftar.maqsid.net",
+      "https://rihal.maqsid.net",
+    ]);
+    expect(targets[0]?.handoff).toBe(false);
+    expect(targets.slice(1).every((row) => row.handoff)).toBe(true);
+  });
+
+  it("builds cards for the dashboard and entitled products, and ignores طواف", () => {
     const targets = launchTargets(["HR", "ACCOUNTING", "OPERATIONS", "TAWAF", "PLATFORM"]);
-    expect(targets.map((row) => row.module)).toEqual(["HR", "ACCOUNTING", "OPERATIONS"]);
+    expect(targets.map((row) => row.module)).toEqual(["PORTAL", "HR", "ACCOUNTING", "OPERATIONS"]);
     expect(targets.some((row) => row.nameAr === "طواف")).toBe(false);
     expect(launchKind(targets)).toBe("many");
   });
 
-  it("sends a single-module tenant straight to that product origin", () => {
+  it("keeps the dashboard beside a single entitled product", () => {
     const targets = launchTargets(["OPERATIONS"]);
-    expect(launchKind(targets)).toBe("one");
-    expect(targets[0]?.origin).toBe("https://rihal.trugraph.io");
+    expect(targets.map((row) => row.origin)).toEqual([
+      "https://app.maqsid.net",
+      "https://rihal.maqsid.net",
+    ]);
+    expect(launchKind(targets)).toBe("many");
   });
 
-  it("has no product when nothing is entitled", () => {
-    expect(launchKind(launchTargets([]))).toBe("none");
-    expect(launchKind(launchTargets(["TAWAF"]))).toBe("none");
+  it("still offers the whole dashboard when no separate product is entitled", () => {
+    expect(launchTargets([]).map((row) => row.module)).toEqual(["PORTAL"]);
+    expect(launchKind(launchTargets(["TAWAF"]))).toBe("one");
+    expect(launchTargets(["TAWAF"])[0]?.origin).toBe("https://app.maqsid.net");
   });
 
   it("writes a hash handoff the product host can consume without a second login", () => {
     const s = session({ enabledModules: ["HR"] });
-    const href = withHandoff("https://hr.trugraph.io", s);
-    expect(href.startsWith("https://hr.trugraph.io/#")).toBe(true);
+    const href = withHandoff("https://kader.maqsid.net", s);
+    expect(href.startsWith("https://kader.maqsid.net/#")).toBe(true);
     expect(href.includes("accessToken=a")).toBe(false);
     const hash = href.slice(href.indexOf("#") + 1);
     window.history.replaceState(null, "", `/login#${hash}`);

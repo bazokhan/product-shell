@@ -33,6 +33,7 @@ export {
   completeTenantLogin,
   completeTenantLoginWithMfa,
   consumeTenantHandoff,
+  catalogTargets,
   launchKind,
   launchTargets,
   withHandoff,
