@@ -33,7 +33,7 @@ let onUnauthorized: LogoutHandler = () => undefined;
 let refreshInFlight: Promise<string | null> | null = null;
 let refreshBlockedUntil = 0;
 
-const SKIP_REFRESH_RETRY = /\/auth\/(refresh|login|login\/mfa|platform\/login|client-credentials)(?:\?|$)/;
+const SKIP_REFRESH_RETRY = /\/auth\/(refresh|revoke|login|login\/mfa|platform\/login|client-credentials)(?:\?|$)/;
 
 export function configureApiClient(options: {
   getAccessToken: TokenProvider;
@@ -51,6 +51,25 @@ export function resetApiClient() {
   onUnauthorized = () => undefined;
   refreshInFlight = null;
   refreshBlockedUntil = 0;
+}
+
+/**
+ * Single-flight refresh shared by every client in the app (one rotation per expiry).
+ * Another HTTP client (e.g. a generated SDK) must call this instead of rotating tokens itself:
+ * two concurrent rotations of the same refresh token revoke the session.
+ */
+export function refreshAccessTokenOnce(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = refreshAccessToken()
+      .then((token) => {
+        if (token) refreshBlockedUntil = 0;
+        return token;
+      })
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
 }
 
 function buildFullUrl(path: string) {
@@ -89,12 +108,7 @@ async function authenticatedFetch(url: string, init: RequestInit, retry = true):
       onUnauthorized();
       throw new ApiRequestError("Unauthorized", 401);
     }
-    if (!refreshInFlight) {
-      refreshInFlight = refreshAccessToken().finally(() => {
-        refreshInFlight = null;
-      });
-    }
-    const newToken = await refreshInFlight;
+    const newToken = await refreshAccessTokenOnce();
     if (newToken) {
       return authenticatedFetch(url, init, false);
     }

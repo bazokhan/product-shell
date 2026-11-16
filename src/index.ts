@@ -16,6 +16,7 @@ export {
   configureApiClient,
   customFetch,
   postForm,
+  refreshAccessTokenOnce,
   resetApiClient,
   unwrapData,
 } from "./custom-fetch";
@@ -36,6 +37,7 @@ export {
   catalogTargets,
   launchKind,
   launchTargets,
+  portalOrigin,
   withHandoff,
 } from "./launcher";
 export type { LaunchTarget, SellableModule } from "./launcher";
@@ -58,3 +60,9 @@ export type { DirectoryColumn } from "./data-directory";
 export { filterNavByAnyOf, matchNavAnyOf } from "./nav-filter";
 export type { NavAnyOfItem } from "./nav-filter";
 
+export { mergeMe, refreshStoredTokens, hydrateStoredSession, signOutStoredSession } from "./auth-session";
+export type { MeResponse } from "./auth-session";
+export { ProductAuthProvider, useProductAuth, AppGate, FullScreenSpinner } from "./auth-provider";
+export { AuthLayout, LanguageToggle, ProductMark } from "./auth-layout";
+export { LoginForm } from "./login-form";
+export { PasswordInput, authInputClass } from "./password-input";

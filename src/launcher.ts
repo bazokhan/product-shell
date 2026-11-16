@@ -1,6 +1,7 @@
 import { productShellConfig, type AuthSession, type AuthTenant, type AuthUser } from "./config";
 import { api } from "./custom-fetch";
 import { completeTenantMfaLogin, throwIfMfaRequired } from "./mfa";
+import { mergeMe, type MeResponse } from "./auth-session";
 import { saveSession } from "./session";
 
 export const HANDOFF_HASH_KEY = "tg_handoff";
@@ -62,14 +63,6 @@ type LoginResponse = {
   branchIds?: string[];
 };
 
-type MeResponse = {
-  user?: AuthUser;
-  tenant?: AuthTenant | null;
-  permissions?: string[];
-  branchIds?: string[];
-  enabledModules?: string[];
-  industryPack?: string;
-};
 
 function originFor(module: SellableModule | typeof PORTAL_MODULE): string {
   const override = productShellConfig().productOrigins?.[module];
@@ -77,6 +70,11 @@ function originFor(module: SellableModule | typeof PORTAL_MODULE): string {
     ? PORTAL.defaultOrigin
     : SELLABLE_PRODUCTS.find((row) => row.module === module)!.defaultOrigin;
   return (override ?? fallback).replace(/\/$/, "");
+}
+
+/** The مقصد dashboard origin (also hosts forgot/reset password and invitations). */
+export function portalOrigin(): string {
+  return originFor(PORTAL_MODULE);
 }
 
 function portalTarget(): LaunchTarget {
@@ -158,16 +156,16 @@ export function consumeTenantHandoff(
   }
 }
 
-function toSession(login: LoginResponse, me?: MeResponse): AuthSession {
+function toSession(login: LoginResponse): AuthSession {
   return {
     accessToken: login.accessToken,
     refreshToken: login.refreshToken,
     tokenType: login.tokenType ?? "Bearer",
-    user: me?.user ?? login.user,
-    tenant: me?.tenant ?? login.tenant,
-    permissions: me?.permissions ?? login.permissions,
-    branchIds: me?.branchIds ?? login.branchIds ?? [],
-    enabledModules: me?.enabledModules ?? [],
+    user: login.user,
+    tenant: login.tenant,
+    permissions: login.permissions,
+    branchIds: login.branchIds ?? [],
+    enabledModules: [],
   };
 }
 
@@ -196,7 +194,7 @@ export async function completeTenantLoginWithMfa(input: { mfaToken: string; code
 async function finishTenantSession(login: LoginResponse): Promise<AuthSession> {
   saveSession(toSession(login));
   const me = await api.get<MeResponse>("/auth/me");
-  const session = toSession(login, me);
+  const session = mergeMe(toSession(login), me);
   saveSession(session);
   return session;
 }
