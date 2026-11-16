@@ -187,4 +187,15 @@ export const api = {
   },
 };
 
+/** Authenticated download (CSV export, PDF, import template): saves the response as `fileName`. */
+export async function downloadFile(path: string, fileName: string): Promise<void> {
+  const response = await authenticatedFetch(path, { method: "GET" });
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export type CustomFetchOptions = never;

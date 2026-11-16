@@ -4,7 +4,7 @@ import { cn } from "./cn";
 
 export type DirectoryColumn<T> = {
   id: string;
-  header: string;
+  header: ReactNode;
   cell: (row: T) => ReactNode;
   defaultVisible?: boolean;
 };

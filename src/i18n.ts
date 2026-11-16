@@ -5,6 +5,21 @@ import { productShellConfig } from "./config";
 export const defaultLocale = "ar";
 
 const shellAr = {
+  list: {
+    search: "بحث…",
+    select: "تحديد",
+    selectPage: "تحديد الصفحة",
+    selected: "{{count}} محدد",
+    clear: "إلغاء التحديد",
+    bulkResult: "تم: {{ok}} · تعذر: {{failed}}",
+    export: "تصدير CSV",
+    template: "تنزيل القالب",
+    import: "استيراد",
+    importStatus: "صالح {{valid}} · غير صالح {{invalid}} · {{status}}",
+    commit: "تنفيذ",
+    pdf: "PDF",
+    print: "طباعة",
+  },
   pagination: {
     records: "{{total}} سجل · صفحة {{page}} / {{totalPages}}",
     prev: "السابق",
@@ -75,6 +90,21 @@ const shellAr = {
 };
 
 const shellEn = {
+  list: {
+    search: "Search…",
+    select: "Select",
+    selectPage: "Select page",
+    selected: "{{count}} selected",
+    clear: "Clear selection",
+    bulkResult: "Done: {{ok}} · Failed: {{failed}}",
+    export: "Export CSV",
+    template: "Download template",
+    import: "Import",
+    importStatus: "Valid {{valid}} · Invalid {{invalid}} · {{status}}",
+    commit: "Commit",
+    pdf: "PDF",
+    print: "Print",
+  },
   pagination: {
     records: "{{total}} records · page {{page}} / {{totalPages}}",
     prev: "Prev",
