@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
- * The one way to update an app's copy of the shell: node scripts/vendor-into.mjs <vendor dir> [...]
- * e.g. node scripts/vendor-into.mjs ../hr-system/vendor/product-shell
+ * Apps with vendor/product-shell as a git submodule (كَادر, دَفتر, رِحال) update with
+ *   git -C vendor/product-shell checkout <shell commit> && git add vendor/product-shell
+ * This script is only for plain-directory copies (fleet-backend/vendor, used by مِنبر):
+ *   node scripts/vendor-into.mjs ../fleet-backend/vendor/product-shell
  * Replaces src/, scripts/, docker/ and the package files; nothing else is touched.
  */
 import { cpSync, existsSync, rmSync } from "node:fs";
