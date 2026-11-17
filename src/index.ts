@@ -70,5 +70,5 @@ export { PasswordInput, authInputClass } from "./password-input";
 export { BranchProvider, BranchSelect, useBranch, useBranchQuery } from "./branch-context";
 export { ListPage, ImportButton, DetailActions, useTablePreference, listParams } from "./list-page";
 export type { ListColumn, ListFilter, BulkAction, ListPageProps, Page } from "./list-page";
-export { SettingsProvider, useSettings, usePins, PinButton, NotificationBell, applyBranding } from "./settings";
+export { SettingsProvider, useSettings, usePins, PinButton, NotificationBell, NotificationPreferences, NotificationsPage, applyBranding } from "./settings";
 export type { Branding, NavPinItem } from "./settings";

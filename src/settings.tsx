@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Bell, Pin, PinOff } from "lucide-react";
 import { api, customFetch } from "./custom-fetch";
 import { cn } from "./cn";
+import { ListPage } from "./list-page";
 
 /**
  * Settings in every portal (D-2026-11-17-01): one fetch of `/settings/effective`, branding applied
@@ -180,6 +181,84 @@ export function NotificationBell({ onNavigate }: { onNavigate?: (link: string) =
           </ul>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// ponytail: mirrors the backend NotificationType enum; read it from the OpenAPI x-list/enum when the apps generate list metadata.
+const NOTIFICATION_TYPES = ["IMPORT_FINISHED", "COMPLIANCE_EXPIRY", "LEAVE_DECISION", "TRIP_ASSIGNED", "ANNOUNCEMENT"] as const;
+
+/** Per-type channel preferences (the `notifications` setting, user level). */
+export function NotificationPreferences() {
+  const { t } = useTranslation();
+  const { values, savePreference } = useSettings();
+  const current = (values.notifications ?? {}) as Record<string, { inApp?: boolean; email?: boolean }>;
+  const set = (type: string, channel: "inApp" | "email", on: boolean) =>
+    void savePreference("notifications", { ...current, [type]: { ...current[type], [channel]: on } });
+  return (
+    <table className="w-full max-w-xl text-sm">
+      <thead>
+        <tr className="border-b text-muted-foreground">
+          <th className="py-2 text-start font-medium">{t("settings.type")}</th>
+          <th className="py-2 font-medium">{t("settings.inApp")}</th>
+          <th className="py-2 font-medium">{t("settings.email")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {NOTIFICATION_TYPES.map((type) => (
+          <tr key={type} className="border-b">
+            <td className="py-2">{t(`notificationType.${type}`)}</td>
+            {(["inApp", "email"] as const).map((channel) => (
+              <td key={channel} className="py-2 text-center">
+                <input
+                  type="checkbox"
+                  aria-label={`${t(`notificationType.${type}`)} ${t(`settings.${channel}`)}`}
+                  checked={current[type]?.[channel] ?? channel === "inApp"}
+                  onChange={(e) => set(type, channel, e.target.checked)}
+                />
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+type NotificationListRow = NotificationRow & { type: string };
+
+/** The notifications page every app routes to (`/notifications`). */
+export function NotificationsPage({ onNavigate }: { onNavigate?: (link: string) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-8">
+      <ListPage<NotificationListRow>
+        listId="notifications"
+        path="/notifications"
+        defaultSort="createdAt:desc"
+        getRowId={(r) => r.id}
+        highlighted={(r) => !r.readAt}
+        filters={[
+          { param: "type", label: t("settings.type"), options: NOTIFICATION_TYPES.map((v) => ({ value: v, label: t(`notificationType.${v}`) })) },
+          { param: "unread", label: t("settings.readState"), options: [{ value: "true", label: t("settings.unread") }, { value: "false", label: t("settings.read") }] },
+        ]}
+        bulkActions={[
+          { action: "read", label: t("settings.markRead") },
+          { action: "unread", label: t("settings.markUnread") },
+          { action: "delete", label: t("settings.delete"), destructive: true },
+        ]}
+        onRowClick={(r) => r.link && (onNavigate ? onNavigate(r.link) : window.location.assign(r.link))}
+        columns={[
+          { id: "title", header: t("settings.title"), cell: (r) => r.title },
+          { id: "type", header: t("settings.type"), sortKey: "type", cell: (r) => t(`notificationType.${r.type}`) },
+          { id: "body", header: t("settings.details"), cell: (r) => r.body ?? "" },
+          { id: "createdAt", header: t("settings.date"), sortKey: "createdAt", cell: (r) => new Date(r.createdAt).toLocaleString() },
+        ]}
+      />
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">{t("settings.channels")}</h2>
+        <NotificationPreferences />
+      </section>
     </div>
   );
 }
