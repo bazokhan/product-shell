@@ -5,6 +5,13 @@ import { productShellConfig } from "./config";
 export const defaultLocale = "ar";
 
 const shellAr = {
+  settings: {
+    pin: "تثبيت في القائمة",
+    unpin: "إزالة من المثبتة",
+    pinned: "المثبتة",
+    notifications: "التنبيهات",
+    markAllRead: "تعليم الكل كمقروء",
+  },
   list: {
     search: "بحث…",
     select: "تحديد",
@@ -90,6 +97,13 @@ const shellAr = {
 };
 
 const shellEn = {
+  settings: {
+    pin: "Pin to menu",
+    unpin: "Unpin",
+    pinned: "Pinned",
+    notifications: "Notifications",
+    markAllRead: "Mark all read",
+  },
   list: {
     search: "Search…",
     select: "Select",

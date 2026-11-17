@@ -7,6 +7,7 @@ import { completeTenantLogin, completeTenantLoginWithMfa } from "./launcher";
 import { NoEntitlementScreen } from "./screens";
 import { isModuleEnabled, loadSession } from "./session";
 import { ProductSessionProvider } from "./session-context";
+import { SettingsProvider } from "./settings";
 
 type ProductAuthValue = {
   session: AuthSession | null;
@@ -131,5 +132,5 @@ export function AppGate({
   if (isLoading) return <FullScreenSpinner />;
   if (!session) return <>{onSignedOut()}</>;
   if (!isModuleEnabled(session, module)) return <NoEntitlementScreen mark={mark} onLogout={logout} />;
-  return <>{children}</>;
+  return <SettingsProvider>{children}</SettingsProvider>;
 }
