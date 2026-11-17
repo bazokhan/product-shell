@@ -172,7 +172,8 @@ export function NotificationBell({ onNavigate }: { onNavigate?: (link: string) =
                   className={cn("w-full rounded-sm p-2 text-start text-sm hover:bg-accent", !r.readAt && "bg-accent/50 font-medium")}
                   onClick={() => {
                     void markRead([r.id]);
-                    if (r.link) onNavigate ? onNavigate(r.link) : window.location.assign(r.link);
+                    if (r.link && onNavigate) onNavigate(r.link);
+                    else if (r.link) window.location.assign(r.link);
                   }}
                 >
                   <div>{r.title}</div>
@@ -249,7 +250,10 @@ export function NotificationsPage({ onNavigate }: { onNavigate?: (link: string) 
           { action: "unread", label: t("settings.markUnread") },
           { action: "delete", label: t("settings.delete"), destructive: true },
         ]}
-        onRowClick={(r) => r.link && (onNavigate ? onNavigate(r.link) : window.location.assign(r.link))}
+        onRowClick={(r) => {
+          if (r.link && onNavigate) onNavigate(r.link);
+          else if (r.link) window.location.assign(r.link);
+        }}
         columns={[
           { id: "title", header: t("settings.title"), cell: (r) => r.title },
           { id: "type", header: t("settings.type"), sortKey: "type", cell: (r) => t(`notificationType.${r.type}`) },
