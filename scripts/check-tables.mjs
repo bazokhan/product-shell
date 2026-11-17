@@ -8,7 +8,8 @@
  * Rules:
  *  - anywhere in src/: a table is the shell ListPage — no raw <table>, shadcn <Table>, DataTable,
  *    DataDirectory or PaginationBar (app-local wrappers count too; src/generated is skipped)
- *  - routes: a detail route ($id / $...Id) renders the shell DetailActions (PDF + print)
+ *  - routes: a detail route ($id / $...Id) renders the shell DetailActions (PDF + print), directly or
+ *    through an app component whose own file renders it (e.g. a config-driven ResourceDetail)
  * Ratchet: new violations fail; fixed ones fail until removed from table-baseline.json.
  */
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -33,11 +34,20 @@ function walk(dir) {
 
 export function collect(dir = root) {
   const out = {};
-  for (const file of walk(join(dir, "src"))) {
+  const files = walk(join(dir, "src"));
+  // Components defined in files that render DetailActions satisfy the detail rule when a route uses them.
+  const withActions = new Set(
+    files
+      .map((f) => readFileSync(f, "utf8"))
+      .filter((text) => /<DetailActions\b/.test(text))
+      .flatMap((text) => [...text.matchAll(/export function (\w+)/g)].map((m) => m[1])),
+  );
+  const rendersActions = (text) => text.includes("DetailActions") || [...withActions].some((name) => new RegExp(`<${name}\\b`).test(text));
+  for (const file of files) {
     const rel = relative(dir, file).replace(/\\/g, "/");
     const text = readFileSync(file, "utf8");
     const v = RULES.filter(([re]) => re.test(text)).map(([, msg]) => msg);
-    if (/^src\/(routes|pages)\//.test(rel) && DETAIL.test(rel) && !text.includes("DetailActions")) v.push("detail page without DetailActions (PDF + print)");
+    if (/^src\/(routes|pages)\//.test(rel) && DETAIL.test(rel) && !rendersActions(text)) v.push("detail page without DetailActions (PDF + print)");
     if (v.length) out[rel] = v;
   }
   return out;
