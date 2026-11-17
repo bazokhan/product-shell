@@ -1,6 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { productShellConfig } from "./config";
+import { filterAndEnumAr, filterAndEnumEn } from "./enum-labels";
 
 export const defaultLocale = "ar";
 
@@ -261,8 +262,8 @@ export function bootstrapI18n(options: {
   const lng = getStoredLocale();
   void i18n.use(initReactI18next).init({
     resources: {
-      ar: { translation: { ...shellAr, ...options.resources.ar } },
-      en: { translation: { ...shellEn, ...options.resources.en } },
+      ar: { translation: { ...filterAndEnumAr, ...shellAr, ...options.resources.ar } },
+      en: { translation: { ...filterAndEnumEn, ...shellEn, ...options.resources.en } },
     },
     lng,
     fallbackLng: "en",
