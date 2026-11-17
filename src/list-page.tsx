@@ -29,6 +29,34 @@ export type ListFilter = {
 };
 
 export type BulkAction = { action: string; label: string; destructive?: boolean };
+
+/** One list's `x-list` metadata plus its closed-value filters, generated from OpenAPI (scripts/list-meta.mjs). */
+export type ListMeta = {
+  id: string;
+  sortable: readonly string[];
+  defaultSort: string;
+  searchable: readonly string[];
+  capabilities?: { export?: boolean; import?: string; bulk?: readonly string[] };
+  filters: { param: string; values: readonly string[] }[];
+};
+export type ListMetaMap = Record<string, ListMeta>;
+
+let listMeta: ListMetaMap = {};
+/** Each app registers its generated LIST_META once (configure-shell). */
+export function configureListMeta(meta: ListMetaMap) {
+  listMeta = meta;
+}
+
+/** Metadata for an API path; `/vehicles/123/handovers` matches `/vehicles/{vehicleId}/handovers`. */
+export function listMetaFor(path: string): ListMeta | undefined {
+  const clean = path.split("?")[0];
+  if (listMeta[clean]) return listMeta[clean];
+  for (const [template, meta] of Object.entries(listMeta)) {
+    const re = new RegExp("^" + template.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\\\{[^}]+\\\}|\{[^}]+\}/g, "[^/]+") + "$");
+    if (re.test(clean)) return meta;
+  }
+  return undefined;
+}
 type BulkResult = { succeeded: string[]; failed: { id: string; code: string; message: string }[] };
 
 type Query = { page: number; pageSize: number; q: string; sort: string; filters: Record<string, string> };
@@ -108,11 +136,11 @@ export function useTablePreference(listId: string, defaults: { columns: string[]
 }
 
 export type ListPageProps<T> = {
-  /** `x-list.id` of the endpoint. */
-  listId: string;
-  /** API path of the list, e.g. `/notifications`. */
+  /** API path of the list, e.g. `/notifications`. Its generated ListMeta supplies id, sort, filters and capabilities. */
   path: string;
-  defaultSort: string;
+  /** Overrides; normally taken from the list's metadata. */
+  listId?: string;
+  defaultSort?: string;
   columns: ListColumn<T>[];
   getRowId: (row: T) => string;
   filters?: ListFilter[];
@@ -131,7 +159,38 @@ export type ListPageProps<T> = {
   reloadKey?: unknown;
 };
 
-export function ListPage<T>({
+export function ListPage<T>(props: ListPageProps<T>) {
+  const { t } = useTranslation();
+  const meta = listMetaFor(props.path);
+  const listId = props.listId ?? meta?.id ?? props.path.replace(/^\//, "").replace(/\//g, ".");
+  const defaultSort = props.defaultSort ?? meta?.defaultSort ?? "";
+  const sortable = new Set(meta?.sortable ?? []);
+  const columns = props.columns.map((c) => (c.sortKey || !sortable.has(c.id) ? c : { ...c, sortKey: c.id }));
+  const filters =
+    props.filters ??
+    (meta?.filters ?? []).map((f) => ({
+      param: f.param,
+      label: t(`filter.${f.param}`, { defaultValue: f.param }),
+      options: f.values.map((v) => ({ value: v, label: t(`enum.${v}`, { defaultValue: v }) })),
+    }));
+  const bulkActions = props.bulkActions ?? (meta?.capabilities?.bulk ?? []).map((a) => ({ action: a, label: t(`bulk.${a}`, { defaultValue: a }), destructive: a === "delete" }));
+  const exportable = props.exportable ?? meta?.capabilities?.export ?? true;
+  const importType = props.importType ?? meta?.capabilities?.import;
+  return (
+    <ListPageInner
+      {...props}
+      listId={listId}
+      defaultSort={defaultSort}
+      columns={columns}
+      filters={filters}
+      bulkActions={bulkActions}
+      exportable={exportable}
+      importType={importType}
+    />
+  );
+}
+
+function ListPageInner<T>({
   listId,
   path,
   defaultSort,
@@ -147,7 +206,7 @@ export function ListPage<T>({
   toolbar,
   highlighted,
   reloadKey,
-}: ListPageProps<T>) {
+}: ListPageProps<T> & { listId: string; defaultSort: string }) {
   const { t } = useTranslation();
   const filterParams = useMemo(() => filters.map((f) => f.param), [filters]);
   const [query, setQuery] = useState<Query>(() => readUrl(defaultSort, filterParams));

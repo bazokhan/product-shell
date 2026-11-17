@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { listParams } from "./list-page";
+import { configureListMeta, listMetaFor, listParams } from "./list-page";
 import { applyBranding } from "./settings";
 
 describe("list contract params", () => {
@@ -19,5 +19,17 @@ describe("branding", () => {
     expect(document.title).toBe("كَادر · شركة النور");
     applyBranding(null);
     expect(document.documentElement.style.getPropertyValue("--brand-primary")).toBe("");
+  });
+});
+
+describe("list metadata", () => {
+  it("matches exact and templated API paths", () => {
+    const meta = { id: "x", sortable: ["a"], defaultSort: "a:asc", searchable: [], filters: [] };
+    configureListMeta({ "/hr/visas": { ...meta, id: "hr.visas" }, "/vehicles/{vehicleId}/handovers": { ...meta, id: "custody" } });
+    expect(listMetaFor("/hr/visas")?.id).toBe("hr.visas");
+    expect(listMetaFor("/hr/visas?q=x")?.id).toBe("hr.visas");
+    expect(listMetaFor("/vehicles/123/handovers")?.id).toBe("custody");
+    expect(listMetaFor("/vehicles/123/handovers/9")).toBeUndefined();
+    expect(listMetaFor("/nope")).toBeUndefined();
   });
 });
