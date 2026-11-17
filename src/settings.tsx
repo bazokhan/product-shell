@@ -32,7 +32,8 @@ type SettingsValue = {
 
 const SettingsContext = createContext<SettingsValue | null>(null);
 
-const COLOR_VARS = ["--color-primary", "--primary", "--color-sidebar-primary", "--sidebar-primary", "--color-ring", "--ring"];
+// Apps read --brand-primary in their theme (Tailwind @theme inline); رِحال maps --primary.
+const COLOR_VARS = ["--brand-primary", "--primary", "--ring"];
 
 export function applyBranding(branding: Branding | null, productName?: string) {
   const root = document.documentElement;
@@ -40,7 +41,8 @@ export function applyBranding(branding: Branding | null, productName?: string) {
     if (branding?.primaryColor) root.style.setProperty(v, branding.primaryColor);
     else root.style.removeProperty(v);
   }
-  if (branding?.displayName && productName) document.title = `${productName} · ${branding.displayName}`;
+  const base = productName ?? document.title.split(" · ")[0];
+  if (branding?.displayName) document.title = `${base} · ${branding.displayName}`;
 }
 
 export function SettingsProvider({ children, productName }: { children: ReactNode; productName?: string }) {

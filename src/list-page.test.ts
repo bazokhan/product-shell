@@ -14,10 +14,10 @@ describe("list contract params", () => {
 describe("branding", () => {
   it("sets and clears the primary colour variables and the title", () => {
     applyBranding({ displayName: "شركة النور", logoUrl: null, primaryColor: "#123456", documentFooter: null, locale: "ar-SA", timezone: "Asia/Riyadh" }, "كَادر");
-    expect(document.documentElement.style.getPropertyValue("--color-primary")).toBe("#123456");
+    expect(document.documentElement.style.getPropertyValue("--brand-primary")).toBe("#123456");
     expect(document.documentElement.style.getPropertyValue("--primary")).toBe("#123456");
     expect(document.title).toBe("كَادر · شركة النور");
     applyBranding(null);
-    expect(document.documentElement.style.getPropertyValue("--color-primary")).toBe("");
+    expect(document.documentElement.style.getPropertyValue("--brand-primary")).toBe("");
   });
 });
