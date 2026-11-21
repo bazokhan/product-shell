@@ -23,7 +23,7 @@ export function userDisplayName(user?: UserReference | null, locale = i18n.langu
 /** Host supplies a real route only after checking its own permission. No guessed profile URLs. */
 export function userProfileHref(user: UserReference | null | undefined, href?: string, canViewProfile = false): string | undefined {
   if (!user?.id || user.unavailable || !canViewProfile || !href) return undefined;
-  if (!href.startsWith('/') || href.startsWith('//') || /[\\\u0000-\u0020]/.test(href)) return undefined;
+  if (!href.startsWith('/') || href.startsWith('//') || (href.includes('\\') || [...href].some(char => char.charCodeAt(0) <= 32))) return undefined;
   return href;
 }
 export function UserDisplay({ user, profileHref, canViewProfile = false, className, locale }: {
