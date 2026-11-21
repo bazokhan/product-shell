@@ -28,7 +28,7 @@ export type ListFilter = {
   options: { value: string; label: string }[];
 };
 
-export type BulkAction = { action: string; label: string; destructive?: boolean };
+export type BulkAction = { action: string; label: string; destructive?: boolean; confirm?: string };
 
 /** One list's `x-list` metadata plus its closed-value filters, generated from OpenAPI (scripts/list-meta.mjs). */
 export type ListMeta = {
@@ -215,6 +215,9 @@ function ListPageInner<T>({
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkResult, setBulkResult] = useState<BulkResult | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulkLock = useRef(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [layout, saveLayout] = useTablePreference(listId, {
     columns: columns.filter((c) => c.defaultVisible !== false).map((c) => c.id),
@@ -265,7 +268,7 @@ function ListPageInner<T>({
             id: "__select",
             header: "",
             cell: (row: T) => (
-              <input type="checkbox" aria-label={t("list.select")} checked={selected.includes(getRowId(row))} onChange={() => toggleRow(getRowId(row))} />
+              <input type="checkbox" disabled={bulkBusy} aria-label={t("list.select")} checked={selected.includes(getRowId(row))} onChange={() => toggleRow(getRowId(row))} />
             ),
           },
         ]
@@ -285,10 +288,24 @@ function ListPageInner<T>({
   ];
 
   const runBulk = async (action: string) => {
-    const res = await api.post<BulkResult>(`${path}/bulk`, { action, ids: selected });
-    setBulkResult(res);
-    setSelected(res.failed.map((f) => f.id));
-    setTick((n) => n + 1);
+    if (bulkLock.current || selected.length === 0) return;
+    const config = bulkActions.find((item) => item.action === action);
+    if (config?.confirm && !window.confirm(config.confirm.replace('{{count}}', String(selected.length)))) return;
+    bulkLock.current = true;
+    setBulkBusy(true);
+    setBulkError(null);
+    setBulkResult(null);
+    try {
+      const res = await api.post<BulkResult>(`${path}/bulk`, { action, ids: selected });
+      setBulkResult(res);
+      setSelected(res.failed.map((f) => f.id));
+      setTick((n) => n + 1);
+    } catch (e) {
+      setBulkError(e instanceof Error ? e.message : String(e));
+    } finally {
+      bulkLock.current = false;
+      setBulkBusy(false);
+    }
   };
 
   const exportCsv = () =>
@@ -322,7 +339,7 @@ function ListPageInner<T>({
             ))}
             {selectable ? (
               <label className="inline-flex items-center gap-1 text-sm">
-                <input type="checkbox" checked={allOnPage} onChange={() => setSelected(allOnPage ? [] : rows.map(getRowId))} />
+                <input type="checkbox" disabled={bulkBusy} checked={allOnPage} onChange={() => setSelected(allOnPage ? [] : rows.map(getRowId))} />
                 {t("list.selectPage")}
               </label>
             ) : null}
@@ -341,20 +358,21 @@ function ListPageInner<T>({
         <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 p-2 text-sm">
           <span>{t("list.selected", { count: selected.length })}</span>
           {bulkActions.map((b) => (
-            <button key={b.action} type="button" className={cn(BUTTON, b.destructive && "text-destructive")} onClick={() => void runBulk(b.action)}>
+            <button key={b.action} type="button" disabled={bulkBusy} className={cn(BUTTON, b.destructive && "text-destructive")} onClick={() => void runBulk(b.action)}>
               {b.label}
             </button>
           ))}
-          <button type="button" className={BUTTON} onClick={() => setSelected([])}>
+          <button type="button" className={BUTTON} disabled={bulkBusy} onClick={() => setSelected([])}>
             {t("list.clear")}
           </button>
         </div>
       ) : null}
+      {bulkError ? <p role="alert" className="text-sm text-destructive">{bulkError}</p> : null}
       {bulkResult ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          {t("list.bulkResult", { ok: bulkResult.succeeded.length, failed: bulkResult.failed.length })}
-          {bulkResult.failed.slice(0, 3).map((f) => ` · ${f.message}`)}
-        </p>
+        <div className="text-sm text-muted-foreground" role="status">
+          <p>{t("list.bulkResult", { ok: bulkResult.succeeded.length, failed: bulkResult.failed.length })}</p>
+          {bulkResult.failed.length ? <ul>{bulkResult.failed.map((f) => <li key={f.id}><bdi>{f.id}</bdi>: {f.code} · {f.message}</li>)}</ul> : null}
+        </div>
       ) : null}
       {result ? (
         <PaginationBar page={result.pagination.page} pageSize={result.pagination.pageSize} total={result.pagination.total} onPageChange={(page) => update({ page })} />
