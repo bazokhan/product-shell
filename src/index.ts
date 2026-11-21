@@ -75,3 +75,6 @@ export type { Branding, NavPinItem } from "./settings";
 
 export { UserDisplay, userDisplayName, userProfileHref } from './user-display';
 export type { UserReference } from './user-display';
+export { formatDateTime } from './format';
+export { AuditHistory, AuditRegister, AuditRouteHistory, matchAuditRecord, safeAuditHref, auditDiff } from './audit';
+export type { AuditDomain, AuditSource, AuditRow, AuditRoute, AuditLinkResolver } from './audit';
