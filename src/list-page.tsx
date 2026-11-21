@@ -138,6 +138,8 @@ export function useTablePreference(listId: string, defaults: { columns: string[]
 export type ListPageProps<T> = {
   /** API path of the list, e.g. `/notifications`. Its generated ListMeta supplies id, sort, filters and capabilities. */
   path: string;
+  /** Complete rows already loaded by an owning detail/report. No second request, pagination, bulk or CSV contract is invented. Use path for server lists. */
+  rows?: T[];
   /** Overrides; normally taken from the list's metadata. */
   listId?: string;
   defaultSort?: string;
@@ -161,6 +163,7 @@ export type ListPageProps<T> = {
 
 export function ListPage<T>(props: ListPageProps<T>) {
   const { t } = useTranslation();
+  if (props.rows) return <EmbeddedListRows {...props} rows={props.rows} />;
   const meta = listMetaFor(props.path);
   const listId = props.listId ?? meta?.id ?? props.path.replace(/^\//, "").replace(/\//g, ".");
   const defaultSort = props.defaultSort ?? meta?.defaultSort ?? "";
@@ -188,6 +191,12 @@ export function ListPage<T>(props: ListPageProps<T>) {
       importType={importType}
     />
   );
+}
+
+/** The same directory renderer for complete nested arrays. Controls do not overwrite the owning page URL. */
+function EmbeddedListRows<T>({ rows, columns, getRowId, listId, path, actions, highlighted, toolbar }: ListPageProps<T> & {rows:T[]}) {
+  const [layout,saveLayout]=useTablePreference(listId ?? path, {columns:columns.filter(c=>c.defaultVisible!==false).map(c=>c.id)});
+  return <DataDirectory rows={rows} columns={columns} visibleIds={layout.columns} onVisibleIds={ids=>saveLayout({columns:ids})} view={layout.view} onView={view=>saveLayout({view})} getRowId={getRowId} actions={actions} highlighted={highlighted} toolbar={toolbar} empty={<EmptyState />} />;
 }
 
 function ListPageInner<T>({
@@ -435,19 +444,25 @@ export function ImportButton({ type, onDone }: { type: string; onDone?: () => vo
 }
 
 /** Detail-page actions: server PDF (`<path>/pdf`) and print. Every detail page renders this. */
-export function DetailActions({ pdfPath, fileName, children }: { pdfPath: string; fileName: string; children?: ReactNode }) {
+export function DetailActions({ pdfPath, fileName, children, disabled=false }: { pdfPath: string; fileName: string; children?: ReactNode; disabled?:boolean }) {
   const { t } = useTranslation();
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+  const pdf=async()=>{setBusy(true);setError('');try{await downloadFile(pdfPath, `${fileName}.pdf`);}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}};
   return (
-    <div className="flex flex-wrap items-center gap-2 print:hidden">
+    <div className="space-y-2 print:hidden">
+     <div className="flex flex-wrap items-center gap-2">
       {children}
-      <button type="button" className={BUTTON} onClick={() => void downloadFile(pdfPath, `${fileName}.pdf`)}>
+      <button type="button" disabled={disabled||busy} className={BUTTON} onClick={() => void pdf()}>
         <FileDown className="size-4" />
         {t("list.pdf")}
       </button>
-      <button type="button" className={BUTTON} onClick={() => window.print()}>
+      <button type="button" disabled={disabled||busy} className={BUTTON} onClick={() => window.print()}>
         <Printer className="size-4" />
         {t("list.print")}
       </button>
+     </div>
+     {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }
