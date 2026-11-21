@@ -25,3 +25,14 @@ export function displayName(ar?: string | null, en?: string | null): string {
   if (i18n.language === "en" && en) return en;
   return ar || en || "—";
 }
+
+/** Audit occurrence time, never the business entry date. Includes seconds, milliseconds and UTC offset. */
+export function formatDateTime(value: string | Date, timeZone?: string, locale = i18n.language): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat(locale?.startsWith('ar') ? 'ar-EG' : 'en-GB', {
+    calendar: 'gregory', year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3,
+    hourCycle: 'h23', timeZoneName: 'longOffset', ...(timeZone ? {timeZone} : {}),
+  }).format(date);
+}
