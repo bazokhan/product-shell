@@ -235,6 +235,7 @@ function ListPageInner<T>({
 
   const update = (patch: Partial<Query>) =>
     setQuery((q) => {
+      setSelected([]);
       const next = { ...q, ...patch, page: patch.page ?? 1 };
       writeUrl(next, defaultSort, filterParams);
       return next;
@@ -249,6 +250,7 @@ function ListPageInner<T>({
   useEffect(() => {
     let alive = true;
     setError(null);
+    setResult(null);
     api
       .get<Page<T>>(path, listParams(query, JSON.parse(extra) as Record<string, string>))
       .then((page) => alive && setResult(page))
@@ -321,7 +323,8 @@ function ListPageInner<T>({
     downloadFile(`${path}?${toSearch({ ...listParams(query, JSON.parse(extra) as Record<string, string>), page: undefined, pageSize: undefined, format: "csv" })}`, `${listId}.csv`);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" aria-busy={!result && !error}>
+      {error ? <div role="alert" className="flex flex-wrap items-center gap-2 rounded-md border border-destructive p-3 text-sm text-destructive"><span>{t("list.loadFailed")} {error}</span><button type="button" className={BUTTON} onClick={() => setTick((n) => n + 1)}>{t("list.retry")}</button></div> : null}
       <DataDirectory
         rows={rows}
         columns={directoryColumns}
@@ -332,7 +335,7 @@ function ListPageInner<T>({
         getRowId={getRowId}
         highlighted={highlighted}
         actions={actions}
-        empty={error ? <EmptyState message={error} /> : result ? <EmptyState /> : <LoadingState />}
+        empty={error ? <span /> : result ? <EmptyState /> : <LoadingState />}
         toolbar={
           <>
             <input className={cn(CONTROL, "w-56")} type="search" placeholder={t("list.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -363,7 +366,7 @@ function ListPageInner<T>({
           </>
         }
       />
-      {selected.length > 0 ? (
+      {result && selected.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 p-2 text-sm">
           <span>{t("list.selected", { count: selected.length })}</span>
           {bulkActions.map((b) => (
