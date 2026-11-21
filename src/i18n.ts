@@ -35,6 +35,8 @@ const shellAr = {
   },
   list: {
     search: "بحث…",
+    loadFailed: "تعذر تحميل النتائج. لم يتم عرض بيانات سابقة.",
+    retry: "إعادة المحاولة",
     select: "تحديد",
     selectPage: "تحديد الصفحة",
     selected: "{{count}} محدد",
@@ -147,6 +149,8 @@ const shellEn = {
   },
   list: {
     search: "Search…",
+    loadFailed: "Results could not be loaded. Previous rows are not shown.",
+    retry: "Retry",
     select: "Select",
     selectPage: "Select page",
     selected: "{{count}} selected",
