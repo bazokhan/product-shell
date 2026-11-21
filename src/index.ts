@@ -72,3 +72,6 @@ export { ListPage, ImportButton, DetailActions, useTablePreference, listParams, 
 export type { ListColumn, ListFilter, BulkAction, ListPageProps, Page, ListMeta, ListMetaMap } from "./list-page";
 export { SettingsProvider, useSettings, usePins, PinButton, NotificationBell, NotificationPreferences, NotificationsPage, applyBranding } from "./settings";
 export type { Branding, NavPinItem } from "./settings";
+
+export { UserDisplay, userDisplayName, userProfileHref } from './user-display';
+export type { UserReference } from './user-display';
